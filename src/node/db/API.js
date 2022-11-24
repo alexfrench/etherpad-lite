@@ -206,22 +206,43 @@ exports.setText = async (padID, text, authorId = '') => {
 };
 
 /**
-appendText(padID, text, [authorId]) appends text to a pad
+* @param {string} padID - the pad ID that should be used when writing changes
+* @param {string} text - the text to be appended
+* @param {string} [authorId] - Optional authorId
+* @param {Iterable<Attribute>} [attribs] - Optional attributes to apply to the inserted text.
+
+appendText(padID, text, [authorId], [attribs]) appends text to a pad
+
+optional attribs to be added to the text
+
 
 Example returns:
 
 {code: 0, message:"ok", data: null}
 {code: 1, message:"padID does not exist", data: null}
 {code: 1, message:"text too long", data: null}
+
 */
-exports.appendText = async (padID, text, authorId = '') => {
+exports.appendText = async (padID, text, authorId = '', attribs) => {
   // text is required
   if (typeof text !== 'string') {
     throw new CustomError('text is not a string', 'apierror');
   }
 
+    // Check the attribs for validity and make iterable
+    let attr = new Map();
+    try {
+      Object.keys(attribs).forEach(function(key) {
+        console.log('Key : ' + key + ', Value : ' + attribs[key])
+        attr.set (key, attribs[key]);
+      })
+    } catch (err) {
+      throw new CustomError('attribs is not in correct format "attribs":{ "key1": "value1", "key2": "value2"}', 'apierror');
+    }
+  
+
   const pad = await getPadSafe(padID, true);
-  await pad.appendText(text, authorId);
+  await pad.appendText(text, authorId, attr);
   await padMessageHandler.updatePadClients(pad);
 };
 

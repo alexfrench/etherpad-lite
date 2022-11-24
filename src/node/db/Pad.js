@@ -243,8 +243,9 @@ class Pad {
    *     non-negative integer less than or equal to `this.text().length - start`.
    * @param {string} ins - New text to insert at `start` (after the `ndel` characters are deleted).
    * @param {string} [authorId] - Author ID of the user making the change (if applicable).
+   * @param {Iterable<Attribute>} [attribs] - Optional attributes to apply to the inserted text.
    */
-  async spliceText(start, ndel, ins, authorId = '') {
+  async spliceText(start, ndel, ins, authorId = '', attribs) {
     if (start < 0) throw new RangeError(`start index must be non-negative (is ${start})`);
     if (ndel < 0) throw new RangeError(`characters to delete must be non-negative (is ${ndel})`);
     const orig = this.text();
@@ -257,7 +258,11 @@ class Pad {
         (!ins && start > 0 && orig[start - 1] === '\n');
     if (!willEndWithNewline) ins += '\n';
     if (ndel === 0 && ins.length === 0) return;
-    const changeset = Changeset.makeSplice(orig, start, ndel, ins);
+    let pool;
+    if (attribs) { // only if attribs present
+      pool = this.pool;
+    }
+    const changeset = Changeset.makeSplice(orig, start, ndel, ins, attribs, pool);
     await this.appendRevision(changeset, authorId);
   }
 
@@ -278,10 +283,11 @@ class Pad {
    *
    * @param {string} newText - Text to insert just BEFORE the pad's existing terminating newline.
    * @param {string} [authorId] - The author ID of the user that initiated the change, if
+   * @param {Iterable<Attribute>} [attribs] - Optional attributes to apply to the inserted text.
    *     applicable.
    */
-  async appendText(newText, authorId = '') {
-    await this.spliceText(this.text().length - 1, 0, newText, authorId);
+  async appendText(newText, authorId = '', attribs) {
+    await this.spliceText(this.text().length - 1, 0, newText, authorId, attribs);
   }
 
   /**
